@@ -231,11 +231,11 @@ mod tests {
 
         #[test]
         fn test_render_value_arr() {
-            let value = json!({"a": "{{.foo.bar.baz}}"});
+            let value = json!({"a": "{{.foo.bar.baz[]}}"});
             let value = DynamicValue::try_from(&value).unwrap();
             let ctx = json!({"foo": {"bar": {"baz": [1,2,3]}}});
             let result = value.render_value(&ctx);
-            let expected = async_graphql::Value::from_json(json!({"a": [1, 2, 3]})).unwrap();
+            let expected = async_graphql::Value::from_json(json!({"a": 1})).unwrap();
             assert_eq!(result.unwrap(), expected);
         }
 

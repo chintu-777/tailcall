@@ -139,17 +139,17 @@ mod tests {
         );
 
         let expr = Expression::Dynamic(DynamicValue::Mustache(
-            Mustache::parse("{{.args.a}}").unwrap(),
+            Mustache::parse("{{.a}}").unwrap(),
         ))
         .with_args(args)
         .and_then(Expression::Dynamic(DynamicValue::Mustache(
-            Mustache::parse("{{args.b}}").unwrap(),
+            Mustache::parse("{{.b}}").unwrap(),
         )))
         .and_then(Expression::Dynamic(DynamicValue::Mustache(
-            Mustache::parse("{{.args.c}}").unwrap(),
+            Mustache::parse("{{.c}}").unwrap(),
         )))
         .and_then(Expression::Dynamic(DynamicValue::Mustache(
-            Mustache::parse("{{args.d}}").unwrap(),
+            Mustache::parse("{{.d}}").unwrap(),
         )));
 
         let actual = eval(&expr).await.unwrap();
