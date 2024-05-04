@@ -254,8 +254,8 @@ pub struct Field {
 
     ///
     /// Inserts a constant resolver for the field.
-    #[serde(rename = "expr", default, skip_serializing_if = "is_default")]
-    pub const_field: Option<Expr>,
+    #[serde(rename = "jq", default, skip_serializing_if = "is_default")]
+    pub const_field: Option<Jq>,
 
     ///
     /// Inserts a GraphQL resolver for the field.
@@ -301,7 +301,7 @@ impl Field {
             directives.push(JS::trace_name());
         }
         if self.const_field.is_some() {
-            directives.push(Expr::trace_name());
+            directives.push(Jq::trace_name());
         }
         if self.grpc.is_some() {
             directives.push(Grpc::trace_name());
@@ -586,8 +586,8 @@ impl Display for GraphQLOperationType {
 /// The `@expr` operators allows you to specify an expression that can evaluate
 /// to a value. The expression can be a static value or built form a Mustache
 /// template. schema.
-pub struct Expr {
-    pub body: Value,
+pub struct Jq {
+    pub query: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, schemars::JsonSchema)]

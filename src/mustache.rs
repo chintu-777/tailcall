@@ -371,6 +371,7 @@ mod tests {
     mod render {
         use std::borrow::Cow;
 
+        use serde::{Serialize, Serializer};
         use serde_json::json;
 
         use crate::mustache::{Mustache, Segment};
@@ -388,6 +389,14 @@ mod tests {
         #[test]
         fn test_render_mixed() {
             struct DummyPath;
+            impl Serialize for DummyPath {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    serializer.serialize_none()
+                }
+            }
 
             impl PathString for DummyPath {
                 fn path_string<T: AsRef<str>>(&self, parts: &[T]) -> Option<Cow<'_, str>> {
@@ -420,6 +429,14 @@ mod tests {
         #[test]
         fn test_render_with_missing_path() {
             struct DummyPath;
+            impl Serialize for DummyPath {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    serializer.serialize_none()
+                }
+            }
 
             impl PathString for DummyPath {
                 fn path_string<T: AsRef<str>>(&self, _: &[T]) -> Option<Cow<'_, str>> {
@@ -457,6 +474,14 @@ mod tests {
         fn test_render_preserves_spaces() {
             struct DummyPath;
 
+            impl Serialize for DummyPath {
+                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    serializer.serialize_none()
+                }
+            }
             impl PathString for DummyPath {
                 fn path_string<T: AsRef<str>>(&self, parts: &[T]) -> Option<Cow<'_, str>> {
                     let parts: Vec<&str> = parts.iter().map(AsRef::as_ref).collect();

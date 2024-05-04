@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use criterion::{black_box, Criterion};
 use derive_setters::Setters;
 use hyper::HeaderMap;
+use serde::{Serialize, Serializer};
 use serde_json::json;
 use tailcall::endpoint::Endpoint;
 use tailcall::has_headers::HasHeaders;
@@ -18,6 +19,14 @@ struct Context {
 impl Default for Context {
     fn default() -> Self {
         Self { value: serde_json::Value::Null, headers: HeaderMap::new() }
+    }
+}
+impl Serialize for Context {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_none()
     }
 }
 impl PathString for Context {

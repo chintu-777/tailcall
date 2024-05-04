@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 use headers::HeaderMap;
+use serde::{Serialize, Serializer};
 
 use crate::has_headers::HasHeaders;
 use crate::path::PathString;
@@ -11,6 +12,15 @@ pub struct ConfigReaderContext<'a> {
     pub runtime: &'a TargetRuntime,
     pub vars: &'a BTreeMap<String, String>,
     pub headers: HeaderMap,
+}
+
+impl<'a> Serialize for ConfigReaderContext<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_none()
+    }
 }
 
 impl<'a> PathString for ConfigReaderContext<'a> {

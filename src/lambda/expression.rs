@@ -3,8 +3,10 @@ use std::fmt::{Debug, Display};
 use std::pin::Pin;
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use async_graphql::ErrorExtensions;
 use async_graphql_value::ConstValue;
+use jaq_interpret::FilterT;
 use thiserror::Error;
 
 use super::{Eval, EvaluationContext, ResolverContextLike, IO};
@@ -22,6 +24,7 @@ pub enum Expression {
     Cache(Cache),
     Path(Box<Expression>, Vec<String>),
     Protect(Box<Expression>),
+    Jq(jaq_interpret::Filter),
 }
 
 impl Display for Expression {
@@ -33,6 +36,7 @@ impl Display for Expression {
             Expression::Cache(_) => write!(f, "Cache"),
             Expression::Path(_, _) => write!(f, "Input"),
             Expression::Protect(expr) => write!(f, "Protected({expr})"),
+            Expression::Jq(_) => write!(f, "Jq"),
         }
     }
 }
@@ -190,7 +194,29 @@ impl Eval for Expression {
                 }
                 Expression::IO(operation) => operation.eval(ctx).await,
                 Expression::Cache(cached) => cached.eval(ctx).await,
+                Expression::Jq(jq) => {
+                    execute_jq(jq, ctx).map_err(|e| EvaluationError::ExprEvalError(e.to_string()))
+                }
             }
         })
     }
+}
+
+fn execute_jq<'a, Ctx: ResolverContextLike<'a> + Sync + Send>(
+    filter: &jaq_interpret::Filter,
+    ctx: EvaluationContext<'a, Ctx>,
+) -> anyhow::Result<ConstValue> {
+    let iter = jaq_interpret::RcIter::new(vec![].into_iter());
+    let value = serde_json::to_value(ctx)?;
+    if value.is_null() {
+        return Err(anyhow!("Failed to serialize context"));
+    }
+    let mut result = filter.run((
+        jaq_interpret::Ctx::new(vec![], &iter),
+        jaq_interpret::Val::from(value),
+    ));
+    let result = result.next().ok_or(anyhow!("No result from jq"))?;
+    let result = result.map_err(|e| anyhow!("{}", e))?;
+    let serde: serde_json::Value = result.into();
+    Ok(async_graphql::Value::from_json(serde)?)
 }

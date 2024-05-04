@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use serde::{Serialize, Serializer};
 use serde_json::json;
 
 use crate::json::JsonLike;
@@ -13,7 +14,7 @@ use crate::lambda::{EvaluationContext, ResolverContextLike};
 /// The PathString trait provides a method for accessing values from a JSON-like
 /// structure. The returned value is encoded as a plain string.
 /// This is typically used in evaluating mustache templates.
-pub trait PathString {
+pub trait PathString: Serialize {
     fn path_string<T: AsRef<str>>(&self, path: &[T]) -> Option<Cow<'_, str>>;
 }
 
@@ -46,6 +47,18 @@ fn convert_value(value: Cow<'_, async_graphql::Value>) -> Option<Cow<'_, str>> {
         Cow::Borrowed(async_graphql::Value::Object(map)) => Some(json!(map).to_string().into()),
         Cow::Borrowed(async_graphql::Value::List(list)) => Some(json!(list).to_string().into()),
         _ => None,
+    }
+}
+
+impl<'a, Ctx: ResolverContextLike<'a>> Serialize for EvaluationContext<'a, Ctx> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.value()
+            .cloned()
+            .unwrap_or_default()
+            .serialize(serializer)
     }
 }
 

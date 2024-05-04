@@ -333,17 +333,6 @@
         "ApplicationXWwwFormUrlencoded"
       ]
     },
-    "Expr": {
-      "description": "The `@expr` operators allows you to specify an expression that can evaluate to a value. The expression can be a static value or built form a Mustache template. schema.",
-      "type": "object",
-      "required": [
-        "body"
-      ],
-      "properties": {
-        "body": true
-      },
-      "additionalProperties": false
-    },
     "Field": {
       "description": "A field definition containing all the metadata information about resolving a field.",
       "type": "object",
@@ -384,17 +373,6 @@
             "null"
           ]
         },
-        "expr": {
-          "description": "Inserts a constant resolver for the field.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Expr"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "graphql": {
           "description": "Inserts a GraphQL resolver for the field.",
           "anyOf": [
@@ -422,6 +400,17 @@
           "anyOf": [
             {
               "$ref": "#/definitions/Http"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jq": {
+          "description": "Inserts a constant resolver for the field.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Jq"
             },
             {
               "type": "null"
@@ -740,6 +729,19 @@
           "type": "string"
         }
       }
+    },
+    "Jq": {
+      "description": "The `@expr` operators allows you to specify an expression that can evaluate to a value. The expression can be a static value or built form a Mustache template. schema.",
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "KeyValue": {
       "type": "object",

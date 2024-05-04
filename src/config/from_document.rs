@@ -377,12 +377,10 @@ fn to_union(union_type: UnionType, doc: &Option<String>) -> Union {
         .collect();
     Union { types, doc: doc.clone() }
 }
-fn to_const_field(directives: &[Positioned<ConstDirective>]) -> Option<config::Expr> {
+fn to_const_field(directives: &[Positioned<ConstDirective>]) -> Option<config::Jq> {
     directives.iter().find_map(|directive| {
-        if directive.node.name.node == config::Expr::directive_name() {
-            config::Expr::from_directive(&directive.node)
-                .to_result()
-                .ok()
+        if directive.node.name.node == config::Jq::directive_name() {
+            config::Jq::from_directive(&directive.node).to_result().ok()
         } else {
             None
         }

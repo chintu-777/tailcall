@@ -1,14 +1,12 @@
-use async_graphql_value::ConstValue;
-
 use crate::blueprint::*;
 use crate::config;
 use crate::config::Field;
 use crate::lambda::Expression;
-use crate::lambda::Expression::Dynamic;
+use crate::lambda::Expression::Jq;
 use crate::try_fold::TryFold;
-use crate::valid::{Valid, ValidationError, Validator};
+use crate::valid::{Valid, Validator};
 
-fn validate_data_with_schema(
+/*fn validate_data_with_schema(
     config: &config::Config,
     field: &config::Field,
     gql_value: ConstValue,
@@ -20,17 +18,34 @@ fn validate_data_with_schema(
         Ok(_) => Valid::succeed(()),
         Err(err) => Valid::from_validation_err(err.transform(&(|a| a.to_owned()))),
     }
-}
+}*/
 
 pub struct CompileExpr<'a> {
-    pub config_module: &'a config::ConfigModule,
-    pub field: &'a config::Field,
-    pub value: &'a serde_json::Value,
-    pub validate: bool,
+    pub query: &'a str,
 }
 
 pub fn compile_expr(inputs: CompileExpr) -> Valid<Expression, String> {
-    let config_module = inputs.config_module;
+    let mut defs = jaq_interpret::ParseCtx::new(vec![]);
+    defs.insert_natives(jaq_core::core());
+    defs.insert_defs(jaq_std::std());
+
+    let filter = inputs.query;
+    let (filter, errs) = jaq_parse::parse(filter, jaq_parse::main());
+    let errs = errs
+        .iter()
+        .map(|v| v.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+
+    if !errs.is_empty() {
+        return Valid::fail(errs);
+    }
+
+    Valid::from_option(filter, errs)
+        .map(|v| defs.compile(v))
+        .map(Jq)
+
+    /* let config_module = inputs.config_module;
     let field = inputs.field;
     let value = inputs.value;
     let validate = inputs.validate;
@@ -56,25 +71,20 @@ pub fn compile_expr(inputs: CompileExpr) -> Valid<Expression, String> {
                 Err(e) => Valid::fail(format!("invalid JSON: {}", e)),
             }
         }
-    })
+    })*/
 }
 
 pub fn update_const_field<'a>(
 ) -> TryFold<'a, (&'a ConfigModule, &'a Field, &'a config::Type, &'a str), FieldDefinition, String>
 {
     TryFold::<(&ConfigModule, &Field, &config::Type, &str), FieldDefinition, String>::new(
-        |(config_module, field, _, _), b_field| {
+        |(_config_module, field, _, _), b_field| {
             let Some(const_field) = &field.const_field else {
                 return Valid::succeed(b_field);
             };
 
-            compile_expr(CompileExpr {
-                config_module,
-                field,
-                value: &const_field.body,
-                validate: true,
-            })
-            .map(|resolver| b_field.resolver(Some(resolver)))
+            compile_expr(CompileExpr { query: &const_field.query })
+                .map(|resolver| b_field.resolver(Some(resolver)))
         },
     )
 }

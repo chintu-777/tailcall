@@ -124,6 +124,7 @@ mod tests {
     use hyper::header::{HeaderName, HeaderValue};
     use hyper::{HeaderMap, Method};
     use pretty_assertions::assert_eq;
+    use serde::{Serialize, Serializer};
     use tailcall_fixtures::protobuf;
 
     use super::RequestTemplate;
@@ -182,6 +183,14 @@ mod tests {
     impl Default for Context {
         fn default() -> Self {
             Self { value: serde_json::Value::Null, headers: HeaderMap::new() }
+        }
+    }
+    impl Serialize for Context {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_none()
         }
     }
 

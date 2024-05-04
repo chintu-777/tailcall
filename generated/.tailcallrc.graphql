@@ -36,14 +36,6 @@ directive @call(
 ) on FIELD_DEFINITION
 
 """
-The `@expr` operators allows you to specify an expression that can evaluate to a 
-value. The expression can be a static value or built form a Mustache template. schema.
-"""
-directive @expr(
-  body: JSON
-) on FIELD_DEFINITION
-
-"""
 The @graphQL operator allows to specify GraphQL API server request to fetch data 
 from.
 """
@@ -495,13 +487,6 @@ input Cors {
 enum Encoding {
   ApplicationJson
   ApplicationXWwwFormUrlencoded
-}
-"""
-The `@expr` operators allows you to specify an expression that can evaluate to a 
-value. The expression can be a static value or built form a Mustache template. schema.
-"""
-input Expr {
-  body: JSON
 }
 """
 The @graphQL operator allows to specify GraphQL API server request to fetch data 
