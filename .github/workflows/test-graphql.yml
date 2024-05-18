@@ -13,44 +13,45 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        profile: minimal
+        override: true
 
-    - name: Create a temporary Cargo project for old code
+    - name: Install Dependencies
       run: |
-        mkdir old_code
-        cd old_code
-        cargo init --bin
-        echo '[dependencies]' >> Cargo.toml
-        echo 'async-graphql = "4.0"' >> Cargo.toml
-        echo 'anyhow = "1.0"' >> Cargo.toml
-        echo 'tailcall_typedefs = { path = "../path_to_your_local_crate" }' >> Cargo.toml
-        echo 'use async_graphql::ServiceDocument;' > src/main.rs
-        echo 'use std::fs::File;' >> src/main.rs
-        echo 'use tailcall_typedefs::gen_gql_schema::generate_rc_file;' >> src/main.rs
-        echo 'use anyhow::Result;' >> src/main.rs
-        echo 'fn main() -> Result<()> {' >> src/main.rs
-        echo '    let mut doc = ServiceDocument::new();' >> src/main.rs
-        echo '    generate_rc_file(&mut doc)?;' >> src/main.rs
-        echo '    let file = File::create("../old_output.graphql")?;' >> src/main.rs
-        echo '    tailcall_typedefs::document::print(&doc, file)?;' >> src/main.rs
-        echo '    Ok(())' >> src/main.rs
-        cargo run
+        rustup component add rustfmt
+        cargo build --workspace
 
-    - name: Create a temporary Cargo project for new code
+    - name: Build and run old_generate
       run: |
-        mkdir new_code
-        cd new_code
-        cargo init --bin
-        echo '[dependencies]' >> Cargo.toml
-        echo 'async-graphql = "4.0"' >> Cargo.toml
-        echo 'anyhow = "1.0"' >> Cargo.toml
-        echo 'tailcall_typedefs = { path = "../path_to_your_local_crate" }' >> Cargo.toml
-        echo 'use tailcall_typedefs::gen_gql_schema::update_gql;' > src/main.rs
-        echo 'use anyhow::Result;' >> src/main.rs
-        echo 'fn main() -> Result<()> {' >> src/main.rs
-        echo '    update_gql()?;' >> src/main.rs
-        echo '    Ok(())' >> src/main.rs
-        cargo run
-        mv new_output.graphql ..
+        echo 'extern crate async_graphql;' > old_generate.rs
+        echo 'extern crate tailcall_typedefs;' >> old_generate.rs
+        echo 'extern crate anyhow;' >> old_generate.rs
+        echo 'use async_graphql::ServiceDocument;' >> old_generate.rs
+        echo 'use std::fs::File;' >> old_generate.rs
+        echo 'use tailcall_typedefs::gen_gql_schema::generate_rc_file;' >> old_generate.rs
+        echo 'use anyhow::Result;' >> old_generate.rs
+        echo 'fn main() -> Result<()> {' >> old_generate.rs
+        echo '    let mut doc = ServiceDocument::new();' >> old_generate.rs
+        echo '    generate_rc_file(&mut doc)?;' >> old_generate.rs
+        echo '    let file = File::create("old_output.graphql")?;' >> old_generate.rs
+        echo '    tailcall_typedefs::document::print(&doc, file)?;' >> old_generate.rs
+        echo '    Ok(())' >> old_generate.rs
+        echo '}' >> old_generate.rs
+        rustc old_generate.rs -o old_generate
+        ./old_generate
+
+    - name: Build and run new_generate
+      run: |
+        echo 'extern crate tailcall_typedefs;' > new_generate.rs
+        echo 'extern crate anyhow;' >> new_generate.rs
+        echo 'use tailcall_typedefs::gen_gql_schema::update_gql;' >> new_generate.rs
+        echo 'use anyhow::Result;' >> new_generate.rs
+        echo 'fn main() -> Result<()> {' >> new_generate.rs
+        echo '    update_gql()?;' >> new_generate.rs
+        echo '    Ok(())' >> new_generate.rs
+        echo '}' >> new_generate.rs
+        rustc new_generate.rs -o new_generate
+        ./new_generate
 
     - name: Compare outputs
       run: diff old_output.graphql new_output.graphql
