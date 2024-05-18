@@ -47,4 +47,12 @@ jobs:
         ./new_generate
 
     - name: Compare outputs
-      run: diff old_output.graphql new_output.graphql
+      run: |
+        if ! diff old_output.graphql new_output.graphql; then
+          echo "The generated GraphQL files do not match!"
+          exit 1
+        fi
+
+    - name: Cleanup
+      run: |
+        rm -f old_generate new_generate old_generate.rs new_generate.rs old_output.graphql new_output.graphql
