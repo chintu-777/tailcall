@@ -719,3 +719,4 @@ fn generate_rc_file(file: File) -> Result<()> {
 
     Ok(())
 }
+//EOL
