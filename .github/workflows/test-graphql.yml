@@ -14,6 +14,11 @@ jobs:
       with:
         toolchain: stable
 
+    - name: Install Dependencies
+      run: |
+        rustup component add rustfmt
+        cargo install --path .
+
     - name: Build and run old_generate
       run: |
         echo 'use async_graphql::ServiceDocument;' > old_generate.rs
