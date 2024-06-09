@@ -52,6 +52,11 @@ pub struct Proxy {
 /// upstream server connection. This includes settings like connection timeouts,
 /// keep-alive intervals, and more. If not specified, default values are used.
 pub struct Upstream {
+    #[serde(rename = "onRequest", default, skip_serializing_if = "is_default")]
+    /// onRequest field gives the ability to specify the global request
+    /// interception handler.
+    pub on_request: Option<String>,
+
     #[serde(default, skip_serializing_if = "is_default")]
     /// `allowedHeaders` defines the HTTP headers allowed to be forwarded to
     /// upstream services. If not set, no headers are forwarded, enhancing
@@ -79,8 +84,8 @@ pub struct Upstream {
     pub connect_timeout: Option<u64>,
 
     #[serde(default, skip_serializing_if = "is_default")]
-    /// Activating this enables Tailcall's HTTP caching, adhering to the [HTTP Caching RFC](https://tools.ietf.org/html/rfc7234), to enhance performance by minimizing redundant data fetches. Defaults to `false` if unspecified.
-    pub http_cache: Option<bool>,
+    /// Providing httpCache size enables Tailcall's HTTP caching, adhering to the [HTTP Caching RFC](https://tools.ietf.org/html/rfc7234), to enhance performance by minimizing redundant data fetches. Defaults to `0` if unspecified.
+    pub http_cache: Option<u64>,
 
     #[setters(strip_option)]
     #[serde(rename = "http2Only", default, skip_serializing_if = "is_default")]
@@ -172,8 +177,8 @@ impl Upstream {
             .clone()
             .unwrap_or("Tailcall/1.0".to_string())
     }
-    pub fn get_enable_http_cache(&self) -> bool {
-        self.http_cache.unwrap_or(false)
+    pub fn get_http_cache_size(&self) -> u64 {
+        self.http_cache.unwrap_or(0)
     }
     pub fn get_allowed_headers(&self) -> BTreeSet<String> {
         self.allowed_headers.clone().unwrap_or_default()
@@ -194,6 +199,10 @@ impl Upstream {
 
     pub fn get_dedupe(&self) -> bool {
         self.dedupe.unwrap_or(false)
+    }
+
+    pub fn get_on_request(&self) -> Option<String> {
+        self.on_request.clone()
     }
 }
 

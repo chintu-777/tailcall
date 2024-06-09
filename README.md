@@ -58,7 +58,7 @@ The below file is a standard `.graphQL` file, with a few additions such as `@ser
 ```graphql
 schema
   @server(port: 8000, hostname: "0.0.0.0")
-  @upstream(baseURL: "http://jsonplaceholder.typicode.com", httpCache: true) {
+  @upstream(baseURL: "http://jsonplaceholder.typicode.com", httpCache: 42) {
   query: Query
 }
 
@@ -99,7 +99,7 @@ Head out to [docs] to learn about other powerful tailcall features.
 
 Your contributions are invaluable! Kindly go through our [contribution guidelines] if you are a first time contributor.
 
-[contribution guidelines]: https://tailcall.run/docs/contributors/
+[contribution guidelines]: https://tailcall.run/developers/
 
 ### Support Us
 

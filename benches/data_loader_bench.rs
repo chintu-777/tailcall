@@ -6,12 +6,12 @@ use std::sync::Arc;
 
 use async_graphql::futures_util::future::join_all;
 use async_graphql_value::ConstValue;
-use async_trait::async_trait;
 use criterion::Criterion;
 use hyper::body::Bytes;
 use reqwest::Request;
 use tailcall::core::config::Batch;
 use tailcall::core::http::{DataLoaderRequest, HttpDataLoader, Response};
+use tailcall::core::ir::IoId;
 use tailcall::core::runtime::TargetRuntime;
 use tailcall::core::{EnvIO, FileIO, HttpIO};
 
@@ -29,7 +29,6 @@ impl HttpIO for MockHttpClient {
 }
 
 struct Env {}
-#[async_trait]
 impl EnvIO for Env {
     fn get(&self, _: &str) -> Option<Cow<'_, str>> {
         unimplemented!("Not needed for this bench")
@@ -38,7 +37,7 @@ impl EnvIO for Env {
 
 struct File;
 
-#[async_trait]
+#[async_trait::async_trait]
 impl FileIO for File {
     async fn write<'a>(&'a self, _: &'a str, _: &'a [u8]) -> anyhow::Result<()> {
         unimplemented!("Not needed for this bench")
@@ -50,9 +49,9 @@ impl FileIO for File {
 }
 
 struct Cache;
-#[async_trait]
+#[async_trait::async_trait]
 impl tailcall::core::Cache for Cache {
-    type Key = u64;
+    type Key = IoId;
     type Value = ConstValue;
 
     async fn set<'a>(&'a self, _: Self::Key, _: Self::Value, _: NonZeroU64) -> anyhow::Result<()> {
@@ -81,6 +80,8 @@ pub fn benchmark_data_loader(c: &mut Criterion) {
                     file: Arc::new(File {}),
                     cache: Arc::new(Cache {}),
                     extensions: Arc::new(vec![]),
+                    cmd_worker: None,
+                    worker: None,
                 };
                 let loader = HttpDataLoader::new(rt, None, false);
                 let loader = loader.to_data_loader(Batch::default().delay(1));

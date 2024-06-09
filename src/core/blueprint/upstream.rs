@@ -24,10 +24,11 @@ pub struct Upstream {
     pub user_agent: String,
     pub allowed_headers: BTreeSet<String>,
     pub base_url: Option<String>,
-    pub http_cache: bool,
+    pub http_cache: u64,
     pub batch: Option<Batch>,
     pub http2_only: bool,
     pub dedupe: bool,
+    pub on_request: Option<String>,
 }
 
 impl Upstream {
@@ -78,10 +79,11 @@ impl TryFrom<&ConfigModule> for Upstream {
                 user_agent: (config_upstream).get_user_agent(),
                 allowed_headers,
                 base_url,
-                http_cache: (config_upstream).get_enable_http_cache(),
+                http_cache: (config_upstream).get_http_cache_size(),
                 batch,
                 http2_only: (config_upstream).get_http_2_only(),
                 dedupe: (config_upstream).get_dedupe(),
+                on_request: (config_upstream).get_on_request(),
             })
             .to_result()
     }

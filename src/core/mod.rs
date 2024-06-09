@@ -8,6 +8,7 @@ mod auth;
 pub mod blueprint;
 pub mod cache;
 pub mod config;
+mod counter;
 pub mod data_loader;
 pub mod directive;
 pub mod document;
@@ -18,8 +19,8 @@ pub mod grpc;
 pub mod has_headers;
 pub mod helpers;
 pub mod http;
+pub mod ir;
 pub mod json;
-pub mod lambda;
 pub mod merge_right;
 pub mod mustache;
 pub mod path;
@@ -35,6 +36,7 @@ mod serde_value_ext;
 pub mod tracing;
 pub mod try_fold;
 pub mod valid;
+pub mod worker;
 
 // Re-export everything from `tailcall_macros` as `macros`
 use std::borrow::Cow;
@@ -43,6 +45,7 @@ use std::num::NonZeroU64;
 
 use async_graphql_value::ConstValue;
 use http::Response;
+use ir::IoId;
 pub use tailcall_macros as macros;
 
 pub trait EnvIO: Send + Sync + 'static {
@@ -54,7 +57,9 @@ pub trait HttpIO: Sync + Send + 'static {
     async fn execute(
         &self,
         request: reqwest::Request,
-    ) -> anyhow::Result<Response<hyper::body::Bytes>>;
+    ) -> anyhow::Result<Response<hyper::body::Bytes>> {
+        self.execute(request).await
+    }
 }
 
 #[async_trait::async_trait]
@@ -78,12 +83,12 @@ pub trait Cache: Send + Sync {
     fn hit_rate(&self) -> Option<f64>;
 }
 
-pub type EntityCache = dyn Cache<Key = u64, Value = ConstValue>;
+pub type EntityCache = dyn Cache<Key = IoId, Value = ConstValue>;
 
 #[async_trait::async_trait]
 pub trait WorkerIO<In, Out>: Send + Sync + 'static {
     /// Calls a global JS function
-    async fn call(&self, name: String, input: In) -> anyhow::Result<Option<Out>>;
+    async fn call(&self, name: &str, input: In) -> anyhow::Result<Option<Out>>;
 }
 
 pub fn is_default<T: Default + Eq>(val: &T) -> bool {
