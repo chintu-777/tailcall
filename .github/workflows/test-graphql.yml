@@ -1,0 +1,57 @@
+name: Verify Output Consistency
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Install Dependencies
+      run: |
+        rustup component add rustfmt
+        cargo build --workspace
+
+    - name: Build and run old_generate
+      run: |
+        echo 'extern crate async_graphql;' > old_generate.rs
+        echo 'extern crate tailcall_typedefs;' >> old_generate.rs
+        echo 'extern crate anyhow;' >> old_generate.rs
+        echo 'use async_graphql::ServiceDocument;' >> old_generate.rs
+        echo 'use std::fs::File;' >> old_generate.rs
+        echo 'use tailcall_typedefs::gen_gql_schema::generate_rc_file;' >> old_generate.rs
+        echo 'use anyhow::Result;' >> old_generate.rs
+        echo 'fn main() -> Result<()> {' >> old_generate.rs
+        echo '    let mut doc = ServiceDocument::new();' >> old_generate.rs
+        echo '    generate_rc_file(&mut doc)?;' >> old_generate.rs
+        echo '    let file = File::create("old_output.graphql")?;' >> old_generate.rs
+        echo '    tailcall_typedefs::document::print(&doc, file)?;' >> old_generate.rs
+        echo '    Ok(())' >> old_generate.rs
+        echo '}' >> old_generate.rs
+        rustc old_generate.rs -o old_generate
+        ./old_generate
+
+    - name: Build and run new_generate
+      run: |
+        echo 'extern crate tailcall_typedefs;' > new_generate.rs
+        echo 'extern crate anyhow;' >> new_generate.rs
+        echo 'use tailcall_typedefs::gen_gql_schema::update_gql;' >> new_generate.rs
+        echo 'use anyhow::Result;' >> new_generate.rs
+        echo 'fn main() -> Result<()> {' >> new_generate.rs
+        echo '    update_gql()?;' >> new_generate.rs
+        echo '    Ok(())' >> new_generate.rs
+        echo '}' >> new_generate.rs
+        rustc new_generate.rs -o new_generate
+        ./new_generate
+
+    - name: Compare outputs
+      run: diff old_output.graphql new_output.graphql
